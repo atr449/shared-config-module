@@ -15,3 +15,6 @@ export type { S3ClientConfig } from './s3.client';
 
 export { SesClient, createSesClient } from './ses.client';
 export type { SesClientConfig, SendMailOptions } from './ses.client';
+
+export { createHttpClient } from './http.client';
+export type { HttpClientConfig, HttpRetryConfig } from './http.client';
