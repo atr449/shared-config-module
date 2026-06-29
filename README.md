@@ -148,9 +148,23 @@ const ses = createSesClient({ region: AWS_SES.REGION, fromEmail: AWS_SES.FROM_EM
 export const sendMail = ses.sendMail.bind(ses);
 ```
 
+```ts
+// An outbound HTTP client (axios) for a provider — interceptors handle
+// correlation-id propagation, bearer-token injection, logging and retry.
+import { createHttpClient } from '@fusionxglobal/shared-config';
+const ruya = createHttpClient({
+  name: 'ruya',
+  baseURL: RUYA_CONFIG.baseURL,
+  timeout: RUYA_CONFIG.timeout,
+  getAuthToken: () => tokenService.getAccessToken(),
+  retry: { retries: 2 },
+});
+const { data } = await ruya.post('/accounts', payload);
+```
+
 `ioredis`, `rabbitmq-with-retry-and-dlq`, `@aws-sdk/client-s3`,
-`@aws-sdk/s3-request-presigner` and `@aws-sdk/client-ses` are **optional** peer
-dependencies — only required if you use the matching client.
+`@aws-sdk/s3-request-presigner`, `@aws-sdk/client-ses` and `axios` are
+**optional** peer dependencies — only required if you use the matching client.
 
 ### 6. AOP method logging (no per-method log lines)
 
