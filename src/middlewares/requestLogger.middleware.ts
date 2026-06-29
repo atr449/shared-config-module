@@ -2,54 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import logger from '../helpers/logger.helper';
 import { HTTP_METHODS, HTTP_STATUS_CODES, LOGGING_CONFIG } from '../constants';
 import { GenericRequestPusher } from '../interfaces/responses.interface';
-
-/**
- * Deep clone and redact sensitive fields from an object.
- */
-function redactSensitiveData(
-  obj: unknown,
-  depth = 0,
-): unknown | string | unknown[] | Record<string, unknown> {
-  if (depth > LOGGING_CONFIG.MAX_REDACTION_DEPTH) return '[MAX_DEPTH_EXCEEDED]';
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== 'object') return obj;
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => redactSensitiveData(item, depth + 1));
-  }
-
-  const redacted: Record<string, unknown> = Object.create(null);
-  const SAFE_KEY = /^[a-zA-Z0-9_-]+$/;
-  for (const [key, value] of Object.entries(obj)) {
-    if (!SAFE_KEY.test(key)) continue;
-    const lowerKey = key.toLowerCase();
-    if (
-      LOGGING_CONFIG.SENSITIVE_FIELDS.some((field) =>
-        lowerKey.includes(field.toLowerCase()),
-      )
-    ) {
-      redacted[key] = '[REDACTED]';
-    } else if (typeof value === 'object') {
-      redacted[key] = redactSensitiveData(value, depth + 1);
-    } else {
-      redacted[key] = value;
-    }
-  }
-  return redacted;
-}
-
-/**
- * Mask a value showing only last N characters.
- */
-function maskValue(
-  value: string,
-  visibleChars: number = LOGGING_CONFIG.MASK_VISIBLE_CHARS,
-): string {
-  if (!value || value.length <= visibleChars) {
-    return '[MASKED]';
-  }
-  return `[MASKED]...${value.slice(-visibleChars)}`;
-}
+import { redactSensitiveData, maskValue } from '../logging/redact';
 
 /**
  * Extract and sanitize headers for logging.
@@ -263,4 +216,4 @@ export function requestLoggerMiddleware(
   next();
 }
 
-export { redactSensitiveData, maskValue };
+// `redactSensitiveData` / `maskValue` live in `../logging/redact` (single home).
