@@ -30,8 +30,11 @@ export * from './helpers';
 // Express middlewares
 export * from './middlewares';
 
-// Client initialisers (Redis, RabbitMQ, Database/Sequelize)
+// Client initialisers (Redis, RabbitMQ, Database/Sequelize, S3, SES)
 export * from './clients';
+
+// AOP method logging (decorators) + redaction utilities
+export * from './logging';
 
 // Environment loading & validation
 export * from './env';

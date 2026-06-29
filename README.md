@@ -18,7 +18,8 @@ and the rest of the fleet.
 | **Exceptions** | `BaseHttpException` + `BadRequestException`, `NotFoundException`, `ConflictException`, ... and `NonRetryableError` |
 | **Helpers** | `logger`, `getLogger`, `responseHelper`/`ResponseHelper`, `checkDbError`, `startTracing`, `stopTracing`, `asyncLocalStorage` |
 | **Middlewares** | `correlationIdMiddleware`, `errorMiddleware`, `requestLoggerMiddleware` |
-| **Clients** | `createRedisClient`/`RedisClient`, `createDatabase`, `createRabbitMQClient`/`RabbitMQClient` |
+| **Clients** | `createRedisClient`, `createDatabase`, `createRabbitMQClient`, `createS3Client`, `createSesClient` |
+| **Logging (AOP)** | `LogMethod`, `LogClass`, `wrapWithLogging`, `redactSensitiveData`, `maskValue` |
 | **Env** | `loadEnvSync`, `getEnvPath`, `validateEnv`, `baseEnvShape` |
 
 ## Install
@@ -130,13 +131,70 @@ const { publisher, consumer, helper } = createRabbitMQClient({
 export { publisher, consumer };
 ```
 
-`ioredis` and `rabbitmq-with-retry-and-dlq` are **optional** peer dependencies —
-only required if you use the Redis / RabbitMQ clients.
+```ts
+// helpers/s3.helper.ts
+import { createS3Client } from '@fusionxglobal/shared-config';
+import { S3_CONFIG } from '../constants';
+export default createS3Client({
+  region: S3_CONFIG.REGION, bucket: S3_CONFIG.BUCKET, endpoint: S3_CONFIG.ENDPOINT,
+  forcePathStyle: S3_CONFIG.FORCE_PATH_STYLE, presignExpiresIn: S3_CONFIG.PRESIGN_EXPIRES_IN,
+  kmsKeyId: S3_CONFIG.KMS_KEY_ID,
+});
+
+// helpers/ses.helper.ts
+import { createSesClient } from '@fusionxglobal/shared-config';
+import { AWS_SES } from '../constants';
+const ses = createSesClient({ region: AWS_SES.REGION, fromEmail: AWS_SES.FROM_EMAIL });
+export const sendMail = ses.sendMail.bind(ses);
+```
+
+`ioredis`, `rabbitmq-with-retry-and-dlq`, `@aws-sdk/client-s3`,
+`@aws-sdk/s3-request-presigner` and `@aws-sdk/client-ses` are **optional** peer
+dependencies — only required if you use the matching client.
+
+### 6. AOP method logging (no per-method log lines)
+
+Stop writing `logger.info('enter X')` / `logger.info('exit X')` by hand. Entry,
+exit (with duration), errors, argument redaction and the ambient
+correlation-id / trace-id are applied automatically.
+
+```ts
+import { LogClass, LogMethod, wrapWithLogging } from '@fusionxglobal/shared-config';
+
+// Whole class (prototype methods):
+@LogClass()
+class PaymentService {
+  async charge(dto: ChargeDto) { /* ... */ }   // → ← ✖ logged automatically
+}
+
+// Single method:
+class FooService { @LogMethod({ logResult: true }) async bar() { /* ... */ } }
+
+// Classes that use arrow-function properties (can't be decorated) — wrap the
+// instance; a Proxy logs every method call:
+export default wrapWithLogging(new AccountsService(), { label: 'AccountsService' });
+```
+
+Output (via the shared Winston logger, so it carries service/correlationId/traceId):
+
+```
+→ PaymentService.charge        { args: [ { amount: 100, card: '[REDACTED]' } ] }
+← PaymentService.charge (12ms) { durationMs: 12 }
+✖ PaymentService.charge (4ms)  { error: { name, message, stack } }
+```
+
+Entry/exit log at `debug` by default (suppressed in deployed envs where the
+level is `info`), so production stays quiet unless you opt in. Errors log at
+`error`. Tune with `{ level, logArgs, logResult, logErrors, redact, label }`.
 
 ## Versioning & install from a git tag
 
-Releases are git tags (`vX.Y.Z`). Until the package is published to GitHub
-Packages, services can depend on a tag directly:
+Tagging is **pipeline-driven**: bump `version` in `package.json` in your PR;
+when it merges to `main`, `.github/workflows/release.yml` creates the matching
+`vX.Y.Z` tag and a GitHub Release automatically (`ci.yml` builds/type-checks on
+every PR). Don't create tags by hand.
+
+Services depend on a tag directly:
 
 ```jsonc
 // package.json

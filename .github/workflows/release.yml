@@ -1,0 +1,66 @@
+name: Release tag
+
+# Pipeline-driven tagging: when package.json's version changes on main, this
+# creates the matching `vX.Y.Z` git tag and a GitHub Release. Bump the version
+# in package.json in your PR; merging to main cuts the tag automatically.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (validate package compiles before tagging)
+        run: npm run build
+
+      - name: Read version
+        id: ver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag if it does not exist
+        id: tag
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          TAG="v${VERSION}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Tag ${TAG} already exists — skipping."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${TAG}" -m "Release ${TAG}"
+            git push origin "${TAG}"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.tag.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ steps.tag.outputs.tag }}" --title "${{ steps.tag.outputs.tag }}" --generate-notes
