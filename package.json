@@ -1,0 +1,105 @@
+{
+  "name": "@fusionxglobal/shared-config",
+  "version": "1.0.0",
+  "description": "Shared configuration, constants, exceptions, structured logging, OpenTelemetry tracing and Express middleware for FusionX VASP microservices.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "default": "./dist/constants/index.js"
+    },
+    "./exceptions": {
+      "types": "./dist/exceptions/index.d.ts",
+      "default": "./dist/exceptions/index.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers/index.d.ts",
+      "default": "./dist/helpers/index.js"
+    },
+    "./middlewares": {
+      "types": "./dist/middlewares/index.d.ts",
+      "default": "./dist/middlewares/index.js"
+    },
+    "./interfaces": {
+      "types": "./dist/interfaces/index.d.ts",
+      "default": "./dist/interfaces/index.js"
+    },
+    "./clients": {
+      "types": "./dist/clients/index.d.ts",
+      "default": "./dist/clients/index.js"
+    },
+    "./env": {
+      "types": "./dist/env/index.d.ts",
+      "default": "./dist/env/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "test": "jest --passWithNoTests"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fusionxglobal/shared-config-module.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "express": "^5.0.0",
+    "ioredis": "^5.0.0",
+    "rabbitmq-with-retry-and-dlq": "^1.0.26",
+    "sequelize": "^6.37.0",
+    "winston": "^3.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": { "optional": true },
+    "rabbitmq-with-retry-and-dlq": { "optional": true }
+  },
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.218.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.218.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-metrics": "^2.7.1",
+    "@opentelemetry/sdk-node": "^0.218.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.10",
+    "express": "^5.2.1",
+    "ioredis": "^5.9.2",
+    "rabbitmq-with-retry-and-dlq": "^1.0.26",
+    "rimraf": "^6.0.1",
+    "sequelize": "^6.37.7",
+    "typescript": "^5.9.3",
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
+  },
+  "author": "FusionX Global",
+  "license": "UNLICENSED",
+  "private": false
+}
