@@ -1,4 +1,7 @@
-import axios, {
+// `axios` is an OPTIONAL peer — type-only import (erased at compile) plus a lazy
+// require inside the factory, so importing this module never pulls axios unless
+// the HTTP client is actually created.
+import type {
   AxiosInstance,
   AxiosError,
   InternalAxiosRequestConfig,
@@ -69,7 +72,9 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
   const retryOn = config.retry?.retryOnStatuses ?? [502, 503, 504];
   const retryDelayMs = config.retry?.retryDelayMs ?? 300;
 
-  const instance = axios.create({
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const axios = require('axios').default ?? require('axios');
+  const instance: AxiosInstance = axios.create({
     baseURL: config.baseURL,
     timeout: config.timeout ?? 30000,
     headers: { 'Content-Type': 'application/json', ...config.headers },

@@ -1,6 +1,6 @@
 {
   "name": "@fusionxglobal/shared-config",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Shared configuration, constants, exceptions, structured logging, OpenTelemetry tracing and Express middleware for FusionX VASP microservices.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -82,12 +82,24 @@
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@aws-sdk/client-s3": { "optional": true },
-    "@aws-sdk/client-ses": { "optional": true },
-    "@aws-sdk/s3-request-presigner": { "optional": true },
-    "axios": { "optional": true },
-    "ioredis": { "optional": true },
-    "rabbitmq-with-retry-and-dlq": { "optional": true }
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "@aws-sdk/client-ses": {
+      "optional": true
+    },
+    "@aws-sdk/s3-request-presigner": {
+      "optional": true
+    },
+    "axios": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "rabbitmq-with-retry-and-dlq": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",

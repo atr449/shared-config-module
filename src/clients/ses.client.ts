@@ -1,7 +1,9 @@
-import {
-  SESClient,
-  SendEmailCommand,
-  type SendEmailCommandOutput,
+// Type-only imports are erased at compile time, so `@aws-sdk/client-ses`
+// (an OPTIONAL peer) is required lazily inside methods — importing this module
+// never pulls the SDK unless the SES client is actually used.
+import type {
+  SESClient as SESClientType,
+  SendEmailCommandOutput,
 } from '@aws-sdk/client-ses';
 import logger from '../helpers/logger.helper';
 
@@ -27,20 +29,24 @@ export interface SendMailOptions {
  * The underlying client is created lazily on first send.
  */
 export class SesClient {
-  private client: SESClient | null = null;
+  private client: SESClientType | null = null;
   private readonly config: SesClientConfig;
 
   constructor(config: SesClientConfig) {
     this.config = config;
   }
 
-  private getClient(): SESClient {
+  private getClient(): SESClientType {
     if (this.client) return this.client;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { SESClient } = require('@aws-sdk/client-ses');
     this.client = new SESClient({ region: this.config.region });
-    return this.client;
+    return this.client as SESClientType;
   }
 
   async sendMail(options: SendMailOptions): Promise<SendEmailCommandOutput> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { SendEmailCommand } = require('@aws-sdk/client-ses');
     const toAddresses = Array.isArray(options.to) ? options.to : [options.to];
     const command = new SendEmailCommand({
       Source: options.from ?? this.config.fromEmail,
@@ -61,7 +67,9 @@ export class SesClient {
     });
 
     try {
-      const result = await this.getClient().send(command);
+      const result = (await this.getClient().send(
+        command,
+      )) as SendEmailCommandOutput;
       logger.info('SES email sent', {
         to: toAddresses,
         subject: options.subject,
