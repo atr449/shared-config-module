@@ -1,6 +1,10 @@
-import Redis, { Cluster } from 'ioredis';
+// Type-only import is erased at compile time, so `ioredis` (an OPTIONAL peer)
+// is required lazily inside connect() — importing this module never pulls
+// the SDK unless a client is actually connected.
+import type { Redis as RedisType, Cluster } from 'ioredis';
 import { REDIS_MODE } from '../constants';
 import logger from '../helpers/logger.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 export interface RedisClientConfig {
   host: string;
@@ -30,11 +34,11 @@ export interface RedisClientConfig {
  *   export default createRedisClient({ host, readHost, port, auth, user, mode });
  */
 export class RedisClient {
-  private client: Redis | Cluster | null = null;
+  private client: RedisType | Cluster | null = null;
   private isConnecting = false;
   private connectionPromise: Promise<void> | null = null;
 
-  private readClient: Redis | Cluster | null = null;
+  private readClient: RedisType | Cluster | null = null;
   private isReadConnecting = false;
   private readConnectionPromise: Promise<void> | null = null;
 
@@ -54,10 +58,10 @@ export class RedisClient {
     this.auth = config.auth;
     this.user = config.user;
     this.mode = config.mode || REDIS_MODE.SINGLE;
-    this.tls =
-      config.tls ?? (process.env.REDIS_TLS ?? 'true') === 'true';
+    this.tls = config.tls ?? (process.env.REDIS_TLS ?? 'true') === 'true';
     this.tlsInsecure =
-      config.tlsInsecure ?? (process.env.REDIS_TLS_INSECURE ?? 'true') === 'true';
+      config.tlsInsecure ??
+      (process.env.REDIS_TLS_INSECURE ?? 'true') === 'true';
   }
 
   private async ensureConnection(): Promise<void> {
@@ -106,17 +110,29 @@ export class RedisClient {
           lazyConnect: true,
         } as const;
 
-        let newClient: Redis | Cluster;
+        // ioredis's actual CJS build exports the Redis class itself as
+        // module.exports (with .Cluster attached as a static property) —
+        // its .d.ts models this as separate named exports, so the module
+        // namespace type isn't directly constructable; use the default
+        // export's type intersected with the Cluster property instead.
+        type IORedisModule = typeof import('ioredis').default & {
+          Cluster: typeof import('ioredis').Cluster;
+        };
+        const IORedis = requireOptionalPeer<IORedisModule>(
+          'ioredis',
+          'Redis client',
+        );
+        let newClient: RedisType | Cluster;
 
         if (this.mode === REDIS_MODE.CLUSTER) {
-          newClient = new Redis.Cluster([{ host, port: this.port }], {
+          newClient = new IORedis.Cluster([{ host, port: this.port }], {
             redisOptions: {
               ...commonOptions,
               tls: { rejectUnauthorized: false },
             },
           });
         } else {
-          newClient = new Redis({
+          newClient = new IORedis({
             host,
             port: this.port,
             ...(this.tls && {
@@ -143,7 +159,9 @@ export class RedisClient {
           resolve();
         });
         newClient.on('ready', () => {
-          logger.info(`Redis ${isRead ? 'read' : 'write'} ready to accept commands`);
+          logger.info(
+            `Redis ${isRead ? 'read' : 'write'} ready to accept commands`,
+          );
         });
         newClient.on('error', (error: Error) => {
           logger.error(`Redis ${isRead ? 'read' : 'write'} connection error`, {
@@ -188,25 +206,27 @@ export class RedisClient {
     return this.client?.status || 'not_initialized';
   }
 
-  public async getClient(): Promise<Redis> {
+  public async getClient(): Promise<RedisType> {
     await this.ensureConnection();
     if (!this.client) {
       throw new Error('Redis client not available after connection attempt');
     }
-    return this.client as unknown as Redis;
+    return this.client as unknown as RedisType;
   }
 
-  public async getReadClient(): Promise<Redis> {
+  public async getReadClient(): Promise<RedisType> {
     await this.ensureReadConnection();
     if (!this.readClient) {
-      throw new Error('Redis read client not available after connection attempt');
+      throw new Error(
+        'Redis read client not available after connection attempt',
+      );
     }
-    return this.readClient as unknown as Redis;
+    return this.readClient as unknown as RedisType;
   }
 
-  public getClientSync(): Redis | null {
+  public getClientSync(): RedisType | null {
     return this.client && this.client.status === 'ready'
-      ? (this.client as unknown as Redis)
+      ? (this.client as unknown as RedisType)
       : null;
   }
 

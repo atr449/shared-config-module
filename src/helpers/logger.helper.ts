@@ -76,9 +76,7 @@ function buildLogger(): winston.Logger {
   );
 
   // Wrap logger methods to make them safe - logging should never crash the app.
-  const wrap = (
-    fn: winston.LeveledLogMethod,
-  ): winston.LeveledLogMethod =>
+  const wrap = (fn: winston.LeveledLogMethod): winston.LeveledLogMethod =>
     ((message: unknown, ...args: unknown[]) => {
       try {
         return fn(message as string, ...args);

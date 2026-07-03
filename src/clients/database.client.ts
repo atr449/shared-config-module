@@ -1,8 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Sequelize, Dialect, Options } from 'sequelize';
+// Type-only import is erased at compile time, so `sequelize` (an OPTIONAL
+// peer) is required lazily inside createDatabase() — importing this module
+// never pulls the SDK unless createDatabase() is actually called.
+import type { Sequelize as SequelizeType, Dialect, Options } from 'sequelize';
 import { ENVIRONMENT } from '../constants';
 import logger from '../helpers/logger.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 export interface DatabaseConfig {
   dbName: string;
@@ -24,7 +28,7 @@ export interface DatabaseConfig {
 
 export interface DatabaseClient {
   /** The configured Sequelize instance — import this into your models. */
-  sequelize: Sequelize;
+  sequelize: SequelizeType;
   /** Authenticate + mark initialised. Call during startup after env load. */
   initializeDatabase: () => Promise<void>;
   /** Close all pooled connections (graceful shutdown). */
@@ -105,7 +109,11 @@ export function createDatabase(config: DatabaseConfig): DatabaseClient {
     return baseOptions;
   };
 
-  const sequelize = new Sequelize({
+  const { Sequelize } = requireOptionalPeer<typeof import('sequelize')>(
+    'sequelize',
+    'Database client',
+  );
+  const sequelize: SequelizeType = new Sequelize({
     database: config.dbName || 'placeholder_db',
     username: config.username || 'placeholder_user',
     password: config.password || '',

@@ -1,14 +1,29 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  type HeadObjectCommandOutput,
+// Type-only imports are erased at compile time, so `@aws-sdk/client-s3` and
+// `@aws-sdk/s3-request-presigner` (both OPTIONAL peers) are required lazily
+// via getS3Sdk()/getS3PresignerSdk() — importing this module never pulls
+// either SDK unless the S3 client is actually used.
+import type {
+  S3Client as S3ClientType,
+  HeadObjectCommandOutput,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Readable } from 'stream';
 import { BadRequestException } from '../exceptions';
 import { S3_MESSAGES } from '../constants';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
+
+function getS3Sdk(): typeof import('@aws-sdk/client-s3') {
+  return requireOptionalPeer<typeof import('@aws-sdk/client-s3')>(
+    '@aws-sdk/client-s3',
+    'S3 client',
+  );
+}
+
+function getS3PresignerSdk(): typeof import('@aws-sdk/s3-request-presigner') {
+  return requireOptionalPeer<typeof import('@aws-sdk/s3-request-presigner')>(
+    '@aws-sdk/s3-request-presigner',
+    'S3 client',
+  );
+}
 
 export interface S3ClientConfig {
   region?: string;
@@ -50,7 +65,7 @@ type PresignGetParams = {
  * Instantiate once per service with the service's S3 config.
  */
 export class S3Helper {
-  private client: S3Client | null = null;
+  private client: S3ClientType | null = null;
   private readonly config: S3ClientConfig;
 
   constructor(config: S3ClientConfig = {}) {
@@ -70,9 +85,10 @@ export class S3Helper {
     }
   }
 
-  private getClient(): S3Client {
+  private getClient(): S3ClientType {
     if (this.client) return this.client;
     this.assertEnabled();
+    const { S3Client } = getS3Sdk();
     this.client = new S3Client({
       region: this.config.region,
       ...(this.config.endpoint && { endpoint: this.config.endpoint }),
@@ -91,6 +107,7 @@ export class S3Helper {
     const bucket = params.bucket ?? (this.config.bucket as string);
     const expiresIn = params.expiresIn ?? this.presignExpiresIn;
 
+    const { PutObjectCommand } = getS3Sdk();
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: params.key,
@@ -100,6 +117,7 @@ export class S3Helper {
       SSEKMSKeyId: this.config.kmsKeyId || undefined,
     });
 
+    const { getSignedUrl } = getS3PresignerSdk();
     const uploadUrl = await getSignedUrl(this.getClient(), command, {
       expiresIn,
     });
@@ -115,6 +133,7 @@ export class S3Helper {
   }): Promise<{ bucket: string; key: string }> {
     this.assertEnabled();
     const bucket = params.bucket ?? (this.config.bucket as string);
+    const { PutObjectCommand } = getS3Sdk();
     await this.getClient().send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -139,6 +158,7 @@ export class S3Helper {
   }> {
     this.assertEnabled();
     const bucket = params.bucket ?? (this.config.bucket as string);
+    const { GetObjectCommand } = getS3Sdk();
     const out = await this.getClient().send(
       new GetObjectCommand({ Bucket: bucket, Key: params.key }),
     );
@@ -168,12 +188,14 @@ export class S3Helper {
     this.assertEnabled();
     const bucket = params.bucket ?? (this.config.bucket as string);
     const expiresIn = params.expiresIn ?? this.presignExpiresIn;
+    const { GetObjectCommand } = getS3Sdk();
     const command = new GetObjectCommand({
       Bucket: bucket,
       Key: params.key,
       ResponseContentType: params.responseContentType,
       ResponseContentDisposition: params.responseContentDisposition,
     });
+    const { getSignedUrl } = getS3PresignerSdk();
     const downloadUrl = await getSignedUrl(this.getClient(), command, {
       expiresIn,
     });
@@ -186,6 +208,7 @@ export class S3Helper {
   }): Promise<HeadObjectCommandOutput> {
     this.assertEnabled();
     const bucket = params.bucket ?? (this.config.bucket as string);
+    const { HeadObjectCommand } = getS3Sdk();
     return await this.getClient().send(
       new HeadObjectCommand({ Bucket: bucket, Key: params.key }),
     );

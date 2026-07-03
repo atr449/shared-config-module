@@ -1,11 +1,10 @@
-import {
-  initializeRabbitMQ,
-  publisher as packagePublisher,
-  consumer as packageConsumer,
-} from 'rabbitmq-with-retry-and-dlq';
+// `rabbitmq-with-retry-and-dlq` is an OPTIONAL peer, so it's required lazily
+// (see getRabbitMQPackage()) rather than imported at module load time —
+// importing this module never pulls the SDK unless a client actually connects.
 import { context as otelContext, propagation } from '@opentelemetry/api';
 import { ENVIRONMENT, ExchangeType } from '../constants';
 import logger from '../helpers/logger.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 import {
   asyncLocalStorage,
   RequestContext,
@@ -23,6 +22,13 @@ import {
   ExchangeConfig,
   MessageInfo,
 } from '../interfaces/rabbitmq.interface';
+
+function getRabbitMQPackage(): typeof import('rabbitmq-with-retry-and-dlq') {
+  return requireOptionalPeer<typeof import('rabbitmq-with-retry-and-dlq')>(
+    'rabbitmq-with-retry-and-dlq',
+    'RabbitMQ client',
+  );
+}
 
 export interface RabbitMQClientConfig {
   /** AMQP connection URL. */
@@ -52,8 +58,7 @@ function injectOtelContext<T extends { message: unknown }>(config: T): T {
       ...original,
       traceparent: carrier['traceparent'] ?? '',
       tracestate: carrier['tracestate'] ?? '',
-      correlationId:
-        original['correlationId'] || store?.correlationId || '',
+      correlationId: original['correlationId'] || store?.correlationId || '',
     },
   };
 }
@@ -105,7 +110,7 @@ export class RabbitMQClient implements RabbitMQHelper {
   private async performInitialization(): Promise<void> {
     try {
       this.connectionState = ConnectionState.CONNECTING;
-      await initializeRabbitMQ(this.url);
+      await getRabbitMQPackage().initializeRabbitMQ(this.url);
       this.connectionState = ConnectionState.CONNECTED;
       await this.assertAllExchanges();
       await this.setupAllQueues();
@@ -126,6 +131,7 @@ export class RabbitMQClient implements RabbitMQHelper {
     logger.debug('Asserting RabbitMQ exchanges', {
       count: this.exchanges.length,
     });
+    const { consumer: packageConsumer } = getRabbitMQPackage();
     await Promise.all(
       this.exchanges.map(async (exchangeConfig) => {
         try {
@@ -137,7 +143,10 @@ export class RabbitMQClient implements RabbitMQHelper {
             `Exchange asserted: ${exchangeConfig.name} (type: ${exchangeConfig.exchangeType})`,
           );
         } catch (error) {
-          logger.error(`Failed to assert exchange: ${exchangeConfig.name}`, error);
+          logger.error(
+            `Failed to assert exchange: ${exchangeConfig.name}`,
+            error,
+          );
           throw error;
         }
       }),
@@ -146,13 +155,17 @@ export class RabbitMQClient implements RabbitMQHelper {
   }
 
   private async setupAllQueues(): Promise<void> {
+    const { consumer: packageConsumer } = getRabbitMQPackage();
     await Promise.all(
       this.queues.map(async (queueConfig) => {
         try {
           await packageConsumer.setupQueue(queueConfig);
           logger.info(`Queue asserted: ${queueConfig.queueName}`);
         } catch (error) {
-          logger.error(`Failed to assert queue: ${queueConfig.queueName}`, error);
+          logger.error(
+            `Failed to assert queue: ${queueConfig.queueName}`,
+            error,
+          );
           throw error;
         }
       }),
@@ -166,20 +179,24 @@ export class RabbitMQClient implements RabbitMQHelper {
         config: PublishToQueueConfig,
       ): Promise<boolean> => {
         await this.initialize();
-        return packagePublisher.publishToQueue(injectOtelContext(config));
+        return getRabbitMQPackage().publisher.publishToQueue(
+          injectOtelContext(config),
+        );
       },
       publishToExchange: async (
         config: PublishToExchangeConfig,
       ): Promise<boolean> => {
         await this.initialize();
-        return packagePublisher.publishToExchange(injectOtelContext(config));
+        return getRabbitMQPackage().publisher.publishToExchange(
+          injectOtelContext(config),
+        );
       },
       assertQueues: async (
         queueName: string,
         options: QueueAssertionOptions,
       ): Promise<void> => {
         await this.initialize();
-        return packageConsumer.assertQueues(queueName, options);
+        return getRabbitMQPackage().consumer.assertQueues(queueName, options);
       },
     };
   }
@@ -216,7 +233,7 @@ export class RabbitMQClient implements RabbitMQHelper {
           );
         };
 
-        return packageConsumer.consumeQueue({
+        return getRabbitMQPackage().consumer.consumeQueue({
           queueName: config.queueName,
           onMessage: wrappedOnMessage,
           options: config.options,

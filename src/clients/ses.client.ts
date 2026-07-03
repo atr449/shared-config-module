@@ -6,6 +6,7 @@ import type {
   SendEmailCommandOutput,
 } from '@aws-sdk/client-ses';
 import logger from '../helpers/logger.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 export interface SesClientConfig {
   region?: string;
@@ -38,15 +39,18 @@ export class SesClient {
 
   private getClient(): SESClientType {
     if (this.client) return this.client;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { SESClient } = require('@aws-sdk/client-ses');
+
+    const { SESClient } = requireOptionalPeer<
+      typeof import('@aws-sdk/client-ses')
+    >('@aws-sdk/client-ses', 'SES client');
     this.client = new SESClient({ region: this.config.region });
     return this.client as SESClientType;
   }
 
   async sendMail(options: SendMailOptions): Promise<SendEmailCommandOutput> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { SendEmailCommand } = require('@aws-sdk/client-ses');
+    const { SendEmailCommand } = requireOptionalPeer<
+      typeof import('@aws-sdk/client-ses')
+    >('@aws-sdk/client-ses', 'SES client');
     const toAddresses = Array.isArray(options.to) ? options.to : [options.to];
     const command = new SendEmailCommand({
       Source: options.from ?? this.config.fromEmail,

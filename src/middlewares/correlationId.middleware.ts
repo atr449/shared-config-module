@@ -15,8 +15,7 @@ export function correlationIdMiddleware(
   next: NextFunction,
 ): void {
   const headerName = HEADERS.CORRELATION_ID;
-  const correlationId =
-    (req.headers[headerName] as string) || randomUUID();
+  const correlationId = (req.headers[headerName] as string) || randomUUID();
 
   // The consuming service owns the global Express.Request augmentation; cast
   // locally so this package ships no clashing global declaration.
