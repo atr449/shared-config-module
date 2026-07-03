@@ -16,7 +16,7 @@ export async function errorMiddleware(
   err: unknown,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _next: NextFunction,
 ): Promise<Response> {
   const correlationId = (req as Request & { correlationId?: string })

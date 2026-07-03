@@ -26,25 +26,25 @@ let sdk: NodeSDK | null = null;
  *
  * Returns the started {@link NodeSDK} (or `null` when tracing is disabled).
  */
-export function startTracing(options: StartTracingOptions = {}): NodeSDK | null {
+export function startTracing(
+  options: StartTracingOptions = {},
+): NodeSDK | null {
   if (sdk) {
     return sdk;
   }
 
-  const endpoint =
-    options.endpoint ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  const endpoint = options.endpoint ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
   if (!endpoint) {
-    // eslint-disable-next-line no-console
-    console.log('[OTEL] OTEL_EXPORTER_OTLP_ENDPOINT not set — tracing disabled');
+    console.log(
+      '[OTEL] OTEL_EXPORTER_OTLP_ENDPOINT not set — tracing disabled',
+    );
     return null;
   }
 
   const cfg = getSharedConfig();
   const serviceName =
-    options.serviceName ||
-    process.env.OTEL_SERVICE_NAME ||
-    cfg.serviceName;
+    options.serviceName || process.env.OTEL_SERVICE_NAME || cfg.serviceName;
   const environment = process.env.NODE_ENV || cfg.nodeEnv;
 
   // Wraps the OTLP exporter and drops noisy spans before export.
@@ -97,7 +97,7 @@ export function startTracing(options: StartTracingOptions = {}): NodeSDK | null 
   });
 
   sdk.start();
-  // eslint-disable-next-line no-console
+
   console.log(
     `[OTEL] Tracing + Metrics started → ${endpoint} gRPC (service: ${serviceName}, env: ${environment})`,
   );
@@ -110,10 +110,9 @@ export async function stopTracing(): Promise<void> {
   if (!sdk) return;
   try {
     await sdk.shutdown();
-    // eslint-disable-next-line no-console
+
     console.log('[OTEL] Tracing shutdown complete');
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('[OTEL] Error during tracing shutdown:', error);
   } finally {
     sdk = null;

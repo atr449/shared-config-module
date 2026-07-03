@@ -41,12 +41,12 @@ export interface SharedRuntimeConfig {
   serviceVersion: string;
 }
 
-const ENV = (typeof process !== 'undefined' && process.env) || ({} as NodeJS.ProcessEnv);
+const ENV =
+  (typeof process !== 'undefined' && process.env) || ({} as NodeJS.ProcessEnv);
 
 function buildDefaults(): SharedRuntimeConfig {
   return {
-    serviceName:
-      ENV.SERVICE_NAME || ENV.OTEL_SERVICE_NAME || 'unknown-service',
+    serviceName: ENV.SERVICE_NAME || ENV.OTEL_SERVICE_NAME || 'unknown-service',
     nodeEnv: ENV.NODE_ENV || 'local',
     logLevels: {
       elk: ENV.ELK_LOG_LEVEL || 'info',

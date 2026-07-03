@@ -33,7 +33,8 @@ export function checkDbError(err: unknown): BaseDbMapped {
   }
 
   if (err instanceof ValidationError) {
-    const message = err.errors?.[0]?.message || DATABASE_MESSAGES.VALIDATION_FAILED;
+    const message =
+      err.errors?.[0]?.message || DATABASE_MESSAGES.VALIDATION_FAILED;
     return new BadRequestException(message);
   }
 

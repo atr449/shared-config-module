@@ -72,7 +72,6 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
   const retryOn = config.retry?.retryOnStatuses ?? [502, 503, 504];
   const retryDelayMs = config.retry?.retryDelayMs ?? 300;
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const axios = require('axios').default ?? require('axios');
   const instance: AxiosInstance = axios.create({
     baseURL: config.baseURL,
@@ -106,9 +105,7 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
   instance.interceptors.response.use(
     (response) => {
       if (logEnabled) {
-        logger.debug(
-          `← [${name}] ${response.status} ${response.config.url}`,
-        );
+        logger.debug(`← [${name}] ${response.status} ${response.config.url}`);
       }
       return response;
     },
