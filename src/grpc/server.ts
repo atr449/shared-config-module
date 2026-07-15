@@ -8,12 +8,13 @@ import type {
 } from '@grpc/grpc-js';
 import { GRPC_OPTIONS, DEFAULT_MAX_MESSAGE_SIZE } from './config';
 import logger from '../helpers/logger.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 function grpcLib(): typeof import('@grpc/grpc-js') {
-  return require('@grpc/grpc-js');
+  return requireOptionalPeer('@grpc/grpc-js', 'gRPC server');
 }
 function protoLoader(): typeof import('@grpc/proto-loader') {
-  return require('@grpc/proto-loader');
+  return requireOptionalPeer('@grpc/proto-loader', 'gRPC server');
 }
 
 function getServerCredentials(): ServerCredentials {
