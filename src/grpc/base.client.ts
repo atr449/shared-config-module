@@ -11,14 +11,15 @@ import { CLIENT_STATE, GRPC_MESSAGES, HEADERS } from '../constants';
 import { BadRequestException } from '../exceptions';
 import logger from '../helpers/logger.helper';
 import { getCorrelationIdFromStore } from './interceptors/utils';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 // `@grpc/grpc-js` + `@grpc/proto-loader` are OPTIONAL peers, required lazily so
 // importing this module never pulls them unless a gRPC client is used.
 function grpcLib(): typeof import('@grpc/grpc-js') {
-  return require('@grpc/grpc-js');
+  return requireOptionalPeer('@grpc/grpc-js', 'gRPC client');
 }
 function protoLoader(): typeof import('@grpc/proto-loader') {
-  return require('@grpc/proto-loader');
+  return requireOptionalPeer('@grpc/proto-loader', 'gRPC client');
 }
 
 function getChannelCredentials(): ChannelCredentials {

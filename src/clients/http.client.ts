@@ -9,6 +9,7 @@ import type {
 import { HEADERS } from '../constants';
 import logger from '../helpers/logger.helper';
 import { asyncLocalStorage } from '../helpers/asyncLocalStorage.helper';
+import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 export interface HttpRetryConfig {
   /** Max retry attempts after the initial request. */
@@ -72,7 +73,8 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
   const retryOn = config.retry?.retryOnStatuses ?? [502, 503, 504];
   const retryDelayMs = config.retry?.retryDelayMs ?? 300;
 
-  const axios = require('axios').default ?? require('axios');
+  const axiosModule = requireOptionalPeer<typeof import('axios')>('axios', 'createHttpClient');
+  const axios = (axiosModule as unknown as { default?: typeof axiosModule }).default ?? axiosModule;
   const instance: AxiosInstance = axios.create({
     baseURL: config.baseURL,
     timeout: config.timeout ?? 30000,
