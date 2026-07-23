@@ -30,6 +30,9 @@ export * from './helpers';
 // Express middlewares
 export * from './middlewares';
 
+// OTel propagators
+export * from './propagation';
+
 // Client initialisers (Redis, RabbitMQ, Database/Sequelize, S3, SES)
 export * from './clients';
 

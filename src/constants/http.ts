@@ -23,7 +23,7 @@ export const HTTP_METHODS = {
 } as const;
 
 export const HEADERS = {
-  CORRELATION_ID: 'x-correlation-id',
+  CORRELATION_ID: 'x-fxg-correlation-id',
   API_ACCESS_TOKEN: 'api-access-token',
   AUTHORIZATION: 'authorization',
 } as const;
