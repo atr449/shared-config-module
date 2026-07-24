@@ -11,6 +11,8 @@ export { default as ResponseHelperDefault } from './response.helper';
 export { startTracing, stopTracing } from './tracing.helper';
 export type { StartTracingOptions } from './tracing.helper';
 
+export { normalizeToTraceId, generateSpanId } from './traceId.helper';
+
 export {
   validateIdempotencyKey,
   normalizePath,
