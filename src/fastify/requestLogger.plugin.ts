@@ -226,13 +226,12 @@ const plugin: FastifyPluginAsync<RequestLoggerPluginOptions> = async (
  */
 export function createRequestLoggerPlugin(
   options: RequestLoggerPluginOptions = {},
-): FastifyPluginAsync<RequestLoggerPluginOptions> {
-  const wrapped = fastifyPlugin()(plugin, {
+): FastifyPluginAsync {
+  // See createCorrelationIdPlugin: bind options first, then wrap.
+  const withOptions: FastifyPluginAsync = async (fastify) => {
+    await plugin(fastify, options);
+  };
+  return fastifyPlugin()(withOptions, {
     name: 'shared-request-logger-plugin',
   });
-  const bound: FastifyPluginAsync<RequestLoggerPluginOptions> = async (
-    fastify,
-    opts,
-  ) => wrapped(fastify, { ...options, ...opts });
-  return Object.assign(bound, wrapped);
 }

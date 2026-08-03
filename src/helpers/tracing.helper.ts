@@ -4,7 +4,13 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { getSharedConfig } from '../runtime/config';
+import { CorrelationIdPropagator } from '../propagation/correlationIdPropagator';
 
 export interface StartTracingOptions {
   /** Override the OTLP gRPC endpoint. Defaults to OTEL_EXPORTER_OTLP_ENDPOINT. */
@@ -87,6 +93,13 @@ export function startTracing(
     }),
     traceExporter: traceExporter as any,
     metricReader,
+    textMapPropagator: new CompositePropagator({
+      propagators: [
+        new CorrelationIdPropagator(),
+        new W3CTraceContextPropagator(),
+        new W3CBaggagePropagator(),
+      ],
+    }),
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': { enabled: false },

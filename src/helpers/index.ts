@@ -11,6 +11,8 @@ export { default as ResponseHelperDefault } from './response.helper';
 export { startTracing, stopTracing } from './tracing.helper';
 export type { StartTracingOptions } from './tracing.helper';
 
+export { normalizeToTraceId, generateSpanId } from './traceId.helper';
+
 export {
   validateIdempotencyKey,
   normalizePath,
@@ -18,3 +20,12 @@ export {
   buildRedisKey,
   buildLockKey,
 } from './idempotency.helper';
+
+export { createScopeResolver } from './scope-resolver.helper';
+export type {
+  ScopeResolver,
+  ScopeResolverDeps,
+  ScopeResolverRedis,
+  ScopeResolverAuthClient,
+  ScopeCatalog,
+} from './scope-resolver.helper';

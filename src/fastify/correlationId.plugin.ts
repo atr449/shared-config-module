@@ -15,21 +15,20 @@ function fastifyPlugin(): <T extends FastifyPluginCallback | FastifyPluginAsync>
 
 export interface CorrelationIdPluginOptions {
   /**
-   * Request header carrying a caller-supplied interaction id to echo back on
-   * the response (FusionX/FAPI: `x-fapi-interaction-id`). Set to `false` to
-   * disable echoing entirely.
+   * Request header carrying a caller-supplied interaction id (FAPI:
+   * `x-fapi-interaction-id`). When present it is echoed back on that header
+   * AND used as the value of `HEADERS.CORRELATION_ID`, so the id the caller
+   * chose is the one they see in the response. Set to `false` for services
+   * that aren't VASP-facing.
+   *
+   * Note there is deliberately no separate "platform correlation header"
+   * option: `HEADERS.CORRELATION_ID` already IS `x-fxg-correlation-id`.
    */
   interactionIdHeader?: string | false;
-  /**
-   * Response header carrying the platform correlation id
-   * (FusionX/FAPI: `x-fxg-correlation-id`). Set to `false` to disable.
-   */
-  platformCorrelationHeader?: string | false;
 }
 
 const DEFAULTS: Required<CorrelationIdPluginOptions> = {
   interactionIdHeader: 'x-fapi-interaction-id',
-  platformCorrelationHeader: 'x-fxg-correlation-id',
 };
 
 /**
@@ -58,8 +57,6 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
 ) => {
   const interactionIdHeader =
     opts.interactionIdHeader ?? DEFAULTS.interactionIdHeader;
-  const platformCorrelationHeader =
-    opts.platformCorrelationHeader ?? DEFAULTS.platformCorrelationHeader;
 
   fastify.addHook('onRequest', (request, _reply, done) => {
     const headerName = HEADERS.CORRELATION_ID;
@@ -82,36 +79,27 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
       request as typeof request & { correlationId?: string }
     ).correlationId;
 
-    // Never clobber a value a handler set deliberately.
-    if (correlationId && !reply.hasHeader(HEADERS.CORRELATION_ID)) {
-      reply.header(HEADERS.CORRELATION_ID, correlationId);
+    const interactionId = interactionIdHeader
+      ? (request.headers[interactionIdHeader] as string | undefined)
+      : undefined;
+
+    // The correlation header carries the caller's interaction id when they
+    // supplied one, so the id they chose is what comes back; otherwise it
+    // carries the id generated above. Either way it is never absent — which
+    // is the whole point on error responses.
+    const outboundCorrelationId = interactionId || correlationId;
+    if (outboundCorrelationId && !reply.hasHeader(HEADERS.CORRELATION_ID)) {
+      // Never clobber a value a handler set deliberately.
+      reply.header(HEADERS.CORRELATION_ID, outboundCorrelationId);
+    }
+
+    if (interactionIdHeader && interactionId && !reply.hasHeader(interactionIdHeader)) {
+      reply.header(interactionIdHeader, interactionId);
     }
 
     const spanContext = trace.getSpanContext(otelContext.active());
     if (spanContext?.traceId && !reply.hasHeader('x-trace-id')) {
       reply.header('x-trace-id', spanContext.traceId);
-    }
-
-    const interactionId = interactionIdHeader
-      ? (request.headers[interactionIdHeader] as string | undefined)
-      : undefined;
-
-    if (interactionIdHeader && interactionId) {
-      if (!reply.hasHeader(interactionIdHeader)) {
-        reply.header(interactionIdHeader, interactionId);
-      }
-      if (platformCorrelationHeader && !reply.hasHeader(platformCorrelationHeader)) {
-        reply.header(platformCorrelationHeader, interactionId);
-      }
-    } else if (
-      platformCorrelationHeader &&
-      correlationId &&
-      !reply.hasHeader(platformCorrelationHeader)
-    ) {
-      // No inbound interaction id to echo (often because the request failed
-      // precisely for lacking it) — fall back to the internal correlation id
-      // so the header is never simply absent.
-      reply.header(platformCorrelationHeader, correlationId);
     }
 
     done(null, payload);
@@ -131,14 +119,15 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
  */
 export function createCorrelationIdPlugin(
   options: CorrelationIdPluginOptions = {},
-): FastifyPluginAsync<CorrelationIdPluginOptions> {
-  const wrapped = fastifyPlugin()(plugin, {
+): FastifyPluginAsync {
+  // Bind the options first, then wrap — NOT the other way around. Wrapping
+  // first and copying fastify-plugin's metadata onto a binding wrapper lets
+  // Fastify unwrap straight through to the unbound plugin, silently applying
+  // defaults and ignoring the caller's options.
+  const withOptions: FastifyPluginAsync = async (fastify) => {
+    await plugin(fastify, options);
+  };
+  return fastifyPlugin()(withOptions, {
     name: 'shared-correlation-id-plugin',
   });
-  // Bake the options in so callers can just `register(createCorrelationIdPlugin())`.
-  const bound: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
-    fastify,
-    opts,
-  ) => wrapped(fastify, { ...options, ...opts });
-  return Object.assign(bound, wrapped);
 }
