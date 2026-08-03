@@ -31,7 +31,11 @@ async function buildApp(): Promise<FastifyInstance> {
   await app.register(createRequestLoggerPlugin());
 
   app.get('/ok', async () => ({ ok: true }));
-  app.post('/echo', async (req) => req.body as object);
+  // Accepts a body so the logger has one to redact, but deliberately does NOT
+  // echo it back. Reflecting request input into the response is a textbook
+  // reflected-XSS pattern (CodeQL js/reflected-xss) and is pointless here —
+  // the assertions inspect the captured log, never the response body.
+  app.post('/submit', async () => ({ received: true }));
   app.get('/health/ready', async () => ({ status: 'ok' }));
   app.get('/boom', async (_req, reply) =>
     reply.status(500).send({ bad: true }),
@@ -77,7 +81,7 @@ describe('createRequestLoggerPlugin', () => {
     app = await buildApp();
     await app.inject({
       method: 'POST',
-      url: '/echo',
+      url: '/submit',
       payload: { username: 'alice', password: 'hunter2' },
     });
 
