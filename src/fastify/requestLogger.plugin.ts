@@ -8,7 +8,9 @@ import { redactSensitiveData, maskValue } from '../logging/redact';
 import { HTTP_METHODS, HTTP_STATUS_CODES, LOGGING_CONFIG } from '../constants';
 import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
-function fastifyPlugin(): <T extends FastifyPluginCallback | FastifyPluginAsync>(
+function fastifyPlugin(): <
+  T extends FastifyPluginCallback | FastifyPluginAsync,
+>(
   fn: T,
   opts?: Record<string, unknown>,
 ) => T {

@@ -25,9 +25,8 @@ export function errorHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): void {
-  const correlationId = (
-    request as FastifyRequest & { correlationId?: string }
-  ).correlationId;
+  const correlationId = (request as FastifyRequest & { correlationId?: string })
+    .correlationId;
 
   const mapped = checkDbError(err);
   const error: unknown = mapped || err;

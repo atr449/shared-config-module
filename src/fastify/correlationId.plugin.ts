@@ -6,7 +6,9 @@ import { asyncLocalStorage } from '../helpers/asyncLocalStorage.helper';
 import { requireOptionalPeer } from '../helpers/optionalPeer.helper';
 
 /** `fastify-plugin` is an optional peer — only Fastify services need it. */
-function fastifyPlugin(): <T extends FastifyPluginCallback | FastifyPluginAsync>(
+function fastifyPlugin(): <
+  T extends FastifyPluginCallback | FastifyPluginAsync,
+>(
   fn: T,
   opts?: Record<string, unknown>,
 ) => T {
@@ -93,7 +95,11 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
       reply.header(HEADERS.CORRELATION_ID, outboundCorrelationId);
     }
 
-    if (interactionIdHeader && interactionId && !reply.hasHeader(interactionIdHeader)) {
+    if (
+      interactionIdHeader &&
+      interactionId &&
+      !reply.hasHeader(interactionIdHeader)
+    ) {
       reply.header(interactionIdHeader, interactionId);
     }
 

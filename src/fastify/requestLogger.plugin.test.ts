@@ -4,7 +4,12 @@ import logger from '../helpers/logger.helper';
 
 jest.mock('../helpers/logger.helper', () => ({
   __esModule: true,
-  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), log: jest.fn() },
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    log: jest.fn(),
+  },
 }));
 
 const mockLogger = logger as unknown as {
@@ -13,7 +18,10 @@ const mockLogger = logger as unknown as {
   error: jest.Mock;
 };
 
-function findLog(mock: jest.Mock, message: string): Record<string, unknown> | undefined {
+function findLog(
+  mock: jest.Mock,
+  message: string,
+): Record<string, unknown> | undefined {
   const call = mock.mock.calls.find(([msg]) => msg === message);
   return call?.[1] as Record<string, unknown> | undefined;
 }
@@ -25,7 +33,9 @@ async function buildApp(): Promise<FastifyInstance> {
   app.get('/ok', async () => ({ ok: true }));
   app.post('/echo', async (req) => req.body as object);
   app.get('/health/ready', async () => ({ status: 'ok' }));
-  app.get('/boom', async (_req, reply) => reply.status(500).send({ bad: true }));
+  app.get('/boom', async (_req, reply) =>
+    reply.status(500).send({ bad: true }),
+  );
 
   await app.ready();
   return app;

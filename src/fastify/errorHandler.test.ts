@@ -1,9 +1,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { errorHandler } from './errorHandler';
-import {
-  BadRequestException,
-  ValidationException,
-} from '../exceptions/http';
+import { BadRequestException, ValidationException } from '../exceptions/http';
 
 async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify();
