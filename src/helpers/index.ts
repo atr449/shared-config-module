@@ -20,3 +20,12 @@ export {
   buildRedisKey,
   buildLockKey,
 } from './idempotency.helper';
+
+export { createScopeResolver } from './scope-resolver.helper';
+export type {
+  ScopeResolver,
+  ScopeResolverDeps,
+  ScopeResolverRedis,
+  ScopeResolverAuthClient,
+  ScopeCatalog,
+} from './scope-resolver.helper';
