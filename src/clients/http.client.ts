@@ -73,8 +73,13 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
   const retryOn = config.retry?.retryOnStatuses ?? [502, 503, 504];
   const retryDelayMs = config.retry?.retryDelayMs ?? 300;
 
-  const axiosModule = requireOptionalPeer<typeof import('axios')>('axios', 'createHttpClient');
-  const axios = (axiosModule as unknown as { default?: typeof axiosModule }).default ?? axiosModule;
+  const axiosModule = requireOptionalPeer<typeof import('axios')>(
+    'axios',
+    'createHttpClient',
+  );
+  const axios =
+    (axiosModule as unknown as { default?: typeof axiosModule }).default ??
+    axiosModule;
   const instance: AxiosInstance = axios.create({
     baseURL: config.baseURL,
     timeout: config.timeout ?? 30000,

@@ -35,6 +35,9 @@
       ],
       "runtime": [
         "dist/runtime/index.d.ts"
+      ],
+      "fastify": [
+        "dist/fastify/index.d.ts"
       ]
     }
   },
@@ -92,6 +95,10 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
+    },
+    "./fastify": {
+      "types": "./dist/fastify/index.d.ts",
+      "default": "./dist/fastify/index.js"
     }
   },
   "scripts": {
@@ -135,6 +142,8 @@
     "@opentelemetry/api": "^1.9.1",
     "axios": "^1.0.0",
     "express": "^5.0.0",
+    "fastify": "^5.0.0",
+    "fastify-plugin": "^5.0.0 || ^6.0.0",
     "ioredis": "^5.0.0",
     "rabbitmq-with-retry-and-dlq": "^1.0.26",
     "sequelize": "^6.37.0",
@@ -168,6 +177,12 @@
     },
     "sequelize": {
       "optional": true
+    },
+    "fastify": {
+      "optional": "true"
+    },
+    "fastify-plugin": {
+      "optional": "true"
     }
   },
   "dependencies": {
@@ -197,6 +212,8 @@
     "axios": "^1.13.2",
     "eslint": "^9.39.2",
     "express": "^5.2.1",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1",
     "ioredis": "^5.9.2",
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
