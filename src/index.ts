@@ -41,3 +41,6 @@ export * from './logging';
 
 // Environment loading & validation
 export * from './env';
+
+// Resilience primitives (circuit breaker)
+export * from './resilience';
