@@ -38,6 +38,9 @@
       ],
       "fastify": [
         "dist/fastify/index.d.ts"
+      ],
+      "resilience": [
+        "dist/resilience/index.d.ts"
       ]
     }
   },
@@ -99,6 +102,10 @@
     "./fastify": {
       "types": "./dist/fastify/index.d.ts",
       "default": "./dist/fastify/index.js"
+    },
+    "./resilience": {
+      "types": "./dist/resilience/index.d.ts",
+      "default": "./dist/resilience/index.js"
     }
   },
   "scripts": {
