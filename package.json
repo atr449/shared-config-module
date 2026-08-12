@@ -1,6 +1,6 @@
 {
   "name": "@fusionxglobal/shared-config",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Shared configuration, constants, exceptions, structured logging, OpenTelemetry tracing and Express middleware for FusionX VASP microservices.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
