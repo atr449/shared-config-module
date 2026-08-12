@@ -149,3 +149,23 @@ export const IDEMPOTENCY_MESSAGES = {
   LOCK_SERVICE_UNAVAILABLE:
     'Transaction lock service is temporarily unavailable. Please retry.',
 } as const;
+
+/* ------------------------------------------------------
+   FAPI HEADER MESSAGES
+   Duplicated verbatim across every BaaS service's FAPI auth
+   middleware (accounts, payments, beneficiaries, transactions, ...).
+------------------------------------------------------ */
+export const FAPI_MESSAGES = {
+  MISSING_INTERACTION_ID: 'x-fapi-interaction-id header is required',
+  MISSING_VASP_ID: 'x-fapi-vasp-id header is required',
+  MISSING_CUSTOMER_IP: 'x-fapi-customer-ip-address header is required',
+  MISSING_CORRELATION_ID: 'x-fxg-correlation-id header is required',
+  INVALID_CORRELATION_ID_FORMAT:
+    'x-fxg-correlation-id must be a valid UUID (e.g. 00000000-0000-4000-8000-000000000001)',
+  MISSING_AUTH_TOKEN: 'Authorization Bearer token is required',
+  INVALID_AUTH_TOKEN: 'Invalid or expired token',
+  INVALID_CLIENT_ID: 'client_id is not registered for any VASP',
+  VASP_ID_MISMATCH:
+    'x-fapi-vasp-id does not match the VASP registered for this client_id',
+  CLIENT_VALIDATION_UNAVAILABLE: 'Unable to validate client_id at this time',
+} as const;
