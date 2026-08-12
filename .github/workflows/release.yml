@@ -66,7 +66,10 @@ jobs:
         if: steps.tag.outputs.created == 'true'
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The default GITHUB_TOKEN can't publish packages under this org's
+          # policy (confirmed via a 401 on v1.5.0's publish step) -- needs a
+          # real PAT scoped write:packages instead.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
       - name: Create GitHub Release
         if: steps.tag.outputs.created == 'true'
