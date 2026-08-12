@@ -6,7 +6,12 @@ import {
 
 jest.mock('../helpers/logger.helper', () => ({
   __esModule: true,
-  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
 const boom = () => Promise.reject(new Error('upstream down'));
@@ -47,11 +52,16 @@ describe('CircuitBreaker', () => {
   });
 
   it('short-circuits without calling upstream while open, and reports Retry-After', async () => {
-    const breaker = new CircuitBreaker('payments', { failureThreshold: 1, cooldownMs: 60000 });
+    const breaker = new CircuitBreaker('payments', {
+      failureThreshold: 1,
+      cooldownMs: 60000,
+    });
     await failTimes(breaker, 1);
 
     const upstream = jest.fn(ok);
-    await expect(breaker.execute(upstream)).rejects.toBeInstanceOf(CircuitOpenError);
+    await expect(breaker.execute(upstream)).rejects.toBeInstanceOf(
+      CircuitOpenError,
+    );
     expect(upstream).not.toHaveBeenCalled();
 
     await breaker.execute(upstream).catch((error: CircuitOpenError) => {
@@ -62,7 +72,10 @@ describe('CircuitBreaker', () => {
   });
 
   it('allows a single probe after the cooldown, and closes when it succeeds', async () => {
-    const breaker = new CircuitBreaker('op', { failureThreshold: 1, cooldownMs: 50 });
+    const breaker = new CircuitBreaker('op', {
+      failureThreshold: 1,
+      cooldownMs: 50,
+    });
     await failTimes(breaker, 1);
     expect(breaker.getState()).toBe('OPEN');
 
@@ -73,7 +86,10 @@ describe('CircuitBreaker', () => {
   });
 
   it('re-opens immediately when the half-open probe fails', async () => {
-    const breaker = new CircuitBreaker('op', { failureThreshold: 3, cooldownMs: 50 });
+    const breaker = new CircuitBreaker('op', {
+      failureThreshold: 3,
+      cooldownMs: 50,
+    });
     await failTimes(breaker, 3);
 
     await new Promise((resolve) => setTimeout(resolve, 60));
@@ -83,7 +99,9 @@ describe('CircuitBreaker', () => {
     expect(breaker.getState()).toBe('OPEN');
 
     const upstream = jest.fn(ok);
-    await expect(breaker.execute(upstream)).rejects.toBeInstanceOf(CircuitOpenError);
+    await expect(breaker.execute(upstream)).rejects.toBeInstanceOf(
+      CircuitOpenError,
+    );
     expect(upstream).not.toHaveBeenCalled();
   });
 
@@ -119,8 +137,12 @@ describe('CircuitBreakerRegistry', () => {
   it('isolates operations — a tripped write does not block the read that diagnoses it', async () => {
     const registry = new CircuitBreakerRegistry({ failureThreshold: 1 });
 
-    await expect(registry.execute('initiate', boom)).rejects.toThrow('upstream down');
-    await expect(registry.execute('initiate', ok)).rejects.toBeInstanceOf(CircuitOpenError);
+    await expect(registry.execute('initiate', boom)).rejects.toThrow(
+      'upstream down',
+    );
+    await expect(registry.execute('initiate', ok)).rejects.toBeInstanceOf(
+      CircuitOpenError,
+    );
 
     // The enquiry breaker is untouched — this is what makes recovery possible.
     await expect(registry.execute('enquiry', ok)).resolves.toBe('ok');
@@ -134,6 +156,9 @@ describe('CircuitBreakerRegistry', () => {
     expect(registry.states()).toEqual({ initiate: 'OPEN', enquiry: 'CLOSED' });
 
     registry.resetAll();
-    expect(registry.states()).toEqual({ initiate: 'CLOSED', enquiry: 'CLOSED' });
+    expect(registry.states()).toEqual({
+      initiate: 'CLOSED',
+      enquiry: 'CLOSED',
+    });
   });
 });
