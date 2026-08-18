@@ -23,3 +23,6 @@ export {
   FastifyResponseHelper,
   fastifyResponseHelper,
 } from './response.helper';
+
+export { withMiddlewareAudit } from './middleware-audit.helper';
+export type { TaggedError, PreHandler } from './middleware-audit.helper';
