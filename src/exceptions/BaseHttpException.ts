@@ -21,7 +21,12 @@ export class BaseHttpException extends Error {
     // every "{ error }" log line across every service loses the actual error
     // text, keeping only statusCode/errorType. Redefining it explicitly as
     // enumerable is the only way to fix that.
-    Object.defineProperty(this, 'message', { value: message, enumerable: true, writable: true, configurable: true });
+    Object.defineProperty(this, 'message', {
+      value: message,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
     this.statusCode = statusCode;
     this.errorType = errorType;
     this.errors = errors && errors.length > 0 ? errors : undefined;

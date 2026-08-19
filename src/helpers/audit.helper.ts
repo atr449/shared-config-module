@@ -3,6 +3,7 @@ import { AUDIT_LOG_EXCHANGE, AUDIT_STATUS } from '../constants/audit';
 import type { AuditStatus } from '../constants/audit';
 import { EXCHANGE_TYPE } from '../constants/messaging';
 import { HTTP_STATUS_CODES } from '../constants/http';
+import type { PublishToExchangeConfig } from '../interfaces/rabbitmq.interface';
 
 /**
  * The message contract of baas-audit-log-service's recordAuditLogRequestSchema.
@@ -44,15 +45,12 @@ export type AuditExtra = Partial<
  * `createRabbitMQClient(...).publisher`). Declared structurally rather than
  * importing the concrete client so a service can pass its own instance (or a
  * stub, in tests) without this module dictating how RabbitMQ is constructed.
+ * The config parameter is the canonical `PublishToExchangeConfig` so the
+ * concrete publisher's function-property signature stays assignable under
+ * strictFunctionTypes.
  */
 export interface AuditLogPublisher {
-  publishToExchange(config: {
-    exchangeName: string;
-    exchangeType: string;
-    routingKey: string;
-    message: unknown;
-    options: { persistent: boolean; durable: boolean };
-  }): Promise<boolean>;
+  publishToExchange(config: PublishToExchangeConfig): Promise<boolean>;
 }
 
 export interface AuditHelperDeps {
