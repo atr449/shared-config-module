@@ -93,6 +93,24 @@ describe('createCorrelationIdPlugin', () => {
     expect(res.headers[CORRELATION_HEADER]).toEqual(expect.any(String));
   });
 
+  it("keeps the caller's own correlation id even when they also send an interaction id", async () => {
+    app = await buildApp();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/ok',
+      headers: {
+        [CORRELATION_HEADER]: 'inbound-correlation-id',
+        [INTERACTION_HEADER]: 'interaction-xyz',
+      },
+    });
+
+    // Both were supplied explicitly, so both come back as sent — the
+    // interaction id must never clobber a correlation id the caller already
+    // chose (the bug this test guards against).
+    expect(res.headers[CORRELATION_HEADER]).toBe('inbound-correlation-id');
+    expect(res.headers[INTERACTION_HEADER]).toBe('interaction-xyz');
+  });
+
   it('can disable interaction-id handling for non-VASP-facing services', async () => {
     app = await buildApp({ interactionIdHeader: false });
     const res = await app.inject({

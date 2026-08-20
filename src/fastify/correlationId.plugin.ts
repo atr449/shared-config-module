@@ -63,13 +63,20 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
   fastify.addHook('onRequest', (request, _reply, done) => {
     const headerName = HEADERS.CORRELATION_ID;
     const spanContext = trace.getSpanContext(otelContext.active());
+    const inboundCorrelationId = request.headers[headerName] as
+      string | undefined;
     const correlationId =
-      (request.headers[headerName] as string) ||
-      spanContext?.traceId ||
-      randomUUID();
+      inboundCorrelationId || spanContext?.traceId || randomUUID();
 
-    (request as typeof request & { correlationId?: string }).correlationId =
-      correlationId;
+    const req = request as typeof request & {
+      correlationId?: string;
+      inboundCorrelationId?: string;
+    };
+    req.correlationId = correlationId;
+    // Tracked separately from `correlationId` above, which also holds
+    // generated fallback values (trace id / random UUID) — onSend needs to
+    // know whether the caller actually sent this header themselves.
+    req.inboundCorrelationId = inboundCorrelationId;
 
     asyncLocalStorage.run({ correlationId }, () => {
       done();
@@ -77,19 +84,25 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
   });
 
   fastify.addHook('onSend', (request, reply, payload, done) => {
-    const correlationId = (
-      request as typeof request & { correlationId?: string }
-    ).correlationId;
+    const req = request as typeof request & {
+      correlationId?: string;
+      inboundCorrelationId?: string;
+    };
+    const correlationId = req.correlationId;
+    const inboundCorrelationId = req.inboundCorrelationId;
 
     const interactionId = interactionIdHeader
       ? (request.headers[interactionIdHeader] as string | undefined)
       : undefined;
 
-    // The correlation header carries the caller's interaction id when they
-    // supplied one, so the id they chose is what comes back; otherwise it
-    // carries the id generated above. Either way it is never absent — which
-    // is the whole point on error responses.
-    const outboundCorrelationId = interactionId || correlationId;
+    // Precedence: the caller's own x-fxg-correlation-id header first (if
+    // they sent one, it's the id they're already tracking — never clobber
+    // it just because they also sent an interaction id); then the caller's
+    // interaction id, adopted as the correlation id when they only sent
+    // that; then the generated fallback. Either way it is never absent —
+    // which is the whole point on error responses.
+    const outboundCorrelationId =
+      inboundCorrelationId || interactionId || correlationId;
     if (outboundCorrelationId && !reply.hasHeader(HEADERS.CORRELATION_ID)) {
       // Never clobber a value a handler set deliberately.
       reply.header(HEADERS.CORRELATION_ID, outboundCorrelationId);
