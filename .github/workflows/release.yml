@@ -69,7 +69,15 @@ jobs:
           # The default GITHUB_TOKEN can't publish packages under this org's
           # policy (confirmed via a 401 on v1.5.0's publish step) -- needs a
           # real PAT scoped write:packages instead.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+          #
+          # This must be GITHUB_TOKEN, not NODE_AUTH_TOKEN: the repo's own
+          # .npmrc hardcodes `//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}`,
+          # and that project-level .npmrc takes precedence over the
+          # NODE_AUTH_TOKEN-based config actions/setup-node generates. Setting
+          # only NODE_AUTH_TOKEN here left that placeholder resolving to an
+          # empty string, so every publish 401'd regardless of the secret's
+          # value (confirmed on v1.6.0 and v1.6.1).
+          GITHUB_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
       - name: Create GitHub Release
         if: steps.tag.outputs.created == 'true'
