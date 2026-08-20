@@ -64,8 +64,7 @@ const plugin: FastifyPluginAsync<CorrelationIdPluginOptions> = async (
     const headerName = HEADERS.CORRELATION_ID;
     const spanContext = trace.getSpanContext(otelContext.active());
     const inboundCorrelationId = request.headers[headerName] as
-      | string
-      | undefined;
+      string | undefined;
     const correlationId =
       inboundCorrelationId || spanContext?.traceId || randomUUID();
 
