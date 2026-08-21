@@ -30,6 +30,9 @@ export * from './helpers';
 // Express middlewares
 export * from './middlewares';
 
+// Fastify plugin ports of the above (correlation-id, request-logger, error handler)
+export * from './fastify';
+
 // OTel propagators
 export * from './propagation';
 
@@ -41,3 +44,6 @@ export * from './logging';
 
 // Environment loading & validation
 export * from './env';
+
+// Resilience primitives (circuit breaker)
+export * from './resilience';

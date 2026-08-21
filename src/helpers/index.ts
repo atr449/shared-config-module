@@ -20,3 +20,21 @@ export {
   buildRedisKey,
   buildLockKey,
 } from './idempotency.helper';
+
+export { createAuditHelpers } from './audit.helper';
+export type {
+  RecordAuditLogMessage,
+  AuditExtra,
+  AuditLogPublisher,
+  AuditHelperDeps,
+  AuditHelpers,
+} from './audit.helper';
+
+export { createScopeResolver } from './scope-resolver.helper';
+export type {
+  ScopeResolver,
+  ScopeResolverDeps,
+  ScopeResolverRedis,
+  ScopeResolverAuthClient,
+  ScopeCatalog,
+} from './scope-resolver.helper';

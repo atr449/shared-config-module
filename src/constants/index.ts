@@ -6,3 +6,6 @@ export * from './rateLimit';
 export * from './messaging';
 export * from './enums';
 export * from './messages';
+export * from './scopes';
+export * from './idempotency';
+export * from './audit';
